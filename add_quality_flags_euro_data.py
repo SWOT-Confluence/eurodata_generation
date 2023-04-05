@@ -4,6 +4,7 @@ from netCDF4 import Dataset
 import glob
 import numpy as np
 import random
+import os
 
 
 flag_dict = {
@@ -181,8 +182,24 @@ def update_reach_flags(flag_dict, nc):
                 nc[level][flag][:] = list(ice_clim_list)
     # nc.close()
     
-    
-all_files = glob.glob('/nas/cee-water/cjgleason/travis/out_testing/*.nc')
+
+
+
+
+#-------------------------------main-----------------------------------
+
+
+external_path = '/media/confluence/work/'
+external_path = '/mnt/work/'
+
+euro_conversion_out_dir = '/nas/cee-water/cjgleason/travis/out_testing/'
+euro_conversion_out_dir = os.path.join(external_path, 'data/euro_gen/euro_conversion_out')
+
+all_files = glob.glob(os.path.join(euro_conversion_out_dir, '*.nc'))
+
+
+
+
 cnt = len(all_files)
 for i in all_files:
     if str(cnt).endswith('000'):

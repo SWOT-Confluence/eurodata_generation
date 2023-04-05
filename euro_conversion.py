@@ -12,23 +12,14 @@ import pandas as pd
 import os
 import numpy as np
 import math
-
-def load_file(topology_file_path):
-    matched_df = pd.read_csv(topology_file_path)
-    return matched_df
-
-
-
-from netCDF4 import Dataset
-import glob
-import shutil
-import pandas as pd
-import os
 from collections import Counter
 import subprocess as sp
 import time
 from datetime import datetime, timedelta
 
+def load_file(topology_file_path):
+    matched_df = pd.read_csv(topology_file_path)
+    return matched_df
 
 def get_reach_nodes(sword_path, reach_id):
 
@@ -56,13 +47,37 @@ def get_reach_nodes(sword_path, reach_id):
     print(f'Found {len(set(all_nodes))} nodes...')
     return list(set(all_nodes))
 
+
+
+#------------------------main-------------------------------
+
+external_path = '/media/confluence/work/'
+external_path = '/mnt/work/'
+
 sword_path = '/nas/cee-water/cjgleason/travis/data/mnt/input/sword/eu_sword_v11.nc'
+sword_path = os.path.join(external_path, 'data/euro_gen/eu_sword_v11.nc')
+
+matched = glob.glob('/nas/cee-water/cjgleason/euro_data/euro_lisflood/Euro_sword_topology/*')
+matched = glob.glob(os.path.join(external_path, 'data/euro_gen/Euro_sword_topology/*'))
+
+original_eurodata_nc_dir = '/nas/cee-water/cjgleason/travis/data/euro_swot_nc/'
+original_eurodata_nc_dir = os.path.join(external_path, 'data/euro_gen/euro_swot_nc/')
+
+
+var_width_dir = '/nas/cee-water/cjgleason/yuta/laplace/data/euro_data/euro_variable_width/out/wfull_lisflood_dfull_sos/'
+var_width_dir = os.path.join(external_path, 'data/euro_gen/wfull_lisflood_dfull_sos/')
+
+out_path = '/nas/cee-water/cjgleason/travis/out_testing/'
+
+out_path = os.path.join(external_path, 'data/euro_gen/euro_conversion_out/')
+
+
 sword = Dataset(sword_path)
 def find_reach_nx(sword):
     reach_nxs = Counter(sword['nodes']['reach_id'][:])
     return reach_nxs
 reach_nxs = find_reach_nx(sword)
-matched = glob.glob('/nas/cee-water/cjgleason/euro_data/euro_lisflood/Euro_sword_topology/*')
+
 
 cnt = 0
 for topology_file_path in matched:
@@ -76,7 +91,7 @@ for topology_file_path in matched:
     
     #restart function
     # for sword_reach in linked_df.reach_id.unique():
-    restart_paths = [os.path.exists(f'/nas/cee-water/cjgleason/travis/out_testing/{sword_reach}.nc') for sword_reach in reach_ids]
+    restart_paths = [os.path.exists(os.path.join(out_path, f'{sword_reach}.nc')) for sword_reach in reach_ids]
     # print(restart_paths)
 
     if False in restart_paths:
@@ -96,31 +111,6 @@ for topology_file_path in matched:
                     #find euro reachs associated with that reach_id
 
                     euro_links = linked_df.link.unique()
-
-
-
-
-
-
-            #         for euro_link in euro_links:
-
-
-            #             # load each variable width 
-            #             basin = os.path.basename(topology_file_path).split('_')[0]
-
-            #             nc_file_path = f'/nas/cee-water/cjgleason/travis/data/euro_swot_nc/{basin}_{euro_link}_SWOT.nc'
-
-            #             #be sure it exists in test set
-            #             if os.path.exists(nc_file_path):
-            #                 netcd = Dataset(nc_file_path, mode = 'r+', clobber=True)
-
-
-
-
-
-
-
-
 
                     agg_var_dict = {
                         'reach' : {
@@ -147,9 +137,9 @@ for topology_file_path in matched:
                         # load each variable width 
                         basin = os.path.basename(topology_file_path).split('_')[0]
 
-                        nc_file_path = f'/nas/cee-water/cjgleason/travis/data/euro_swot_nc/{basin}_{euro_link}_SWOT.nc'
+                        nc_file_path = os.path.join(original_eurodata_nc_dir, f'{basin}_{euro_link}_SWOT.nc')
 
-                        var_width_csv = f'/nas/cee-water/cjgleason/yuta/laplace/data/euro_data/euro_variable_width/out/wfull_lisflood_dfull_sos/{basin}_{euro_link}.csv'
+                        var_width_csv = os.path.join(var_width_dir, f'{basin}_{euro_link}.csv')
 
                         var_width_df = pd.read_csv(var_width_csv)
 
@@ -210,13 +200,13 @@ for topology_file_path in matched:
 
                     # use last nc_file_path to do the sword reach nc write out
 
-                    shutil.copyfile(nc_file_path, f'/nas/cee-water/cjgleason/travis/out_testing/{l}.nc')
+                    shutil.copyfile(nc_file_path, os.path.join(out_path, f'{l}.nc'))
 
                     # open new nc file
-                    new_fp = f'/nas/cee-water/cjgleason/travis/out_testing/{l}.nc'
+                    new_fp = os.path.join(out_path, f'{l}.nc')
                     netcd = Dataset(new_fp, mode = 'r+', clobber=True)
 
-                    print(f'/nas/cee-water/cjgleason/travis/out_testing/{l}.nc')
+                    # print(f'/nas/cee-water/cjgleason/travis/out_testing/{l}.nc')
 
                     def overwrite_variable(agg_var_dict, agg_var, netcd, target_nx):
 
@@ -268,7 +258,7 @@ for topology_file_path in matched:
                         
                     # add in missing variables
                     # netcd.close()
-                    new_fp = f'/nas/cee-water/cjgleason/travis/out_testing/{l}.nc'
+                    new_fp = os.path.join(out_path, f'{l}.nc')
                     netcd = Dataset(new_fp, mode = 'r+', clobber=True)
                     nx = netcd.dimensions['nx']
                     nt = netcd.dimensions['nt']
